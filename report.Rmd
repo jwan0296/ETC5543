@@ -1,0 +1,105 @@
+---
+title: "internship_report"
+author: "Junhao Wang"
+date: "26/05/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+# Load tidyverse packages
+library(tidyverse)
+library(readr)
+library(janitor)
+library(stringr)
+library(lubridate)
+```
+
+```{r}
+# Read files as tibbles
+referrals <- read_csv(file="referrals.csv")
+```
+
+
+```{r}
+# Function to check if all values in a vector are equal
+is_constant <- function(x) {
+  isTRUE(all.equal(x, rep(x[1],length(x))))
+}
+```
+
+
+```{r}
+# Function to remove columns containing only missing values or all values equal
+remove_meaningless_columns <- function(object) {
+  all_miss <- colSums(is.na(object)) == NROW(object)
+  all_equal <- apply(object, 2, is_constant)
+  return(object[,!all_miss & !all_equal])
+}
+```
+
+
+```{r}
+# Create main tables as tibbles
+referrals_clean1 <- referrals %>%
+  janitor::clean_names() %>%
+  remove_meaningless_columns() %>%
+  arrange(date_received)%>%
+  mutate(client_type = str_to_lower(client_type))
+```
+
+```{r}
+#check variables' type
+glimpse(referrals_clean1)
+```
+
+```{r}
+#change variable name
+referrals_clean1<-referrals_clean1%>%rename(post_code=we_suggest_you_do,region=postcode)
+```
+
+```{r}
+# combining
+referrals_clean2<-referrals_clean1%>%
+  mutate(client_type = recode(client_type, beareaved = "bereaved person", witnes= "witness","witnes on scene"="witness", .missing = "unknown"))%>%
+  mutate(referred_by = recode(referred_by, .missing = "unknown"))
+  
+referrals_clean2 <- referrals_clean2 %>%
+  mutate(
+    client_type = if_else(str_detect(client_type, "bereaved"), "bereaved", client_type)
+  ) %>%
+  mutate(
+    client_type = if_else(str_detect(client_type, "parent|fam|fr|mother|partner|work|employ"), "fam/fr of casualty", client_type)
+  ) %>%
+  mutate(
+    client_type = if_else(str_detect(client_type, "driver"), "driver", client_type)
+  ) %>%
+  mutate(
+    client_type = if_else(str_detect(client_type, "scooter|cyc|motor"), "rider", client_type)
+  ) %>%
+  mutate(
+    client_type = if_else(str_detect(client_type, "injure|rage"), "other injured person", client_type)
+  ) %>%
+  mutate(
+    client_type = if_else(str_detect(client_type, "witness|scene"), "witness", client_type)
+  ) %>%
+  mutate(
+    client_type = if_else(str_detect(client_type, "pass|pedes"), "passenger", client_type)
+  ) %>%
+  mutate(
+    client_type = if_else(str_detect(client_type, "ccccc|group|emerg|second|inap"), "other", client_type)
+  ) %>%
+  mutate(
+    referred_by = if_else(str_detect(referred_by, "General|Hospital|Social|Internet|GP|Ambulance|RTSSV|Solicitor|After|Agencies|Counsellor|Media|Metro"), "Other", referred_by)
+  )
+```
+
+
+
+
+
+
+
