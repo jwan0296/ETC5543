@@ -16,6 +16,9 @@ library(readr)
 library(janitor)
 library(stringr)
 library(lubridate)
+library(fpp3)
+library(absmapsdata)
+#library(sf)
 ```
 
 ```{r}
@@ -41,7 +44,7 @@ remove_meaningless_columns <- function(object) {
 }
 ```
 
-
+With the help and guidance of professor Rob Hyndman, I removed useless variables and cleaned the variable names and created the table referrals_clean1.
 ```{r}
 # Create main tables as tibbles
 referrals_clean1 <- referrals %>%
@@ -50,12 +53,12 @@ referrals_clean1 <- referrals %>%
   arrange(date_received)%>%
   mutate(client_type = str_to_lower(client_type))
 ```
-
+Then I checked the data type, name and value in each variable:
 ```{r}
 #check variables' type
 glimpse(referrals_clean1)
 ```
-
+After checking that, I renamed the variable and combined the catogorical variables' values and created referrals_clean2.
 ```{r}
 #change variable name
 referrals_clean1<-referrals_clean1%>%rename(post_code=we_suggest_you_do,region=postcode)
@@ -97,9 +100,104 @@ referrals_clean2 <- referrals_clean2 %>%
   )
 ```
 
+Next I created a new variable "day_of_week" to check whether more referrals are received on Monday
 
+```{r}
+referrals_clean3<-referrals_clean2%>%
+  mutate(referred_by=str_to_lower(referred_by))%>%
+  select(-x1)%>%
+  mutate(day_of_week = wday(date_received, label = TRUE)) #, post_code = as.numeric(post_code)  can not find the place 8344 gipsland
 
+referrals_clean3%>%group_by(day_of_week)%>%summarise(proportion=n()/8037*100)
+```
+According to the table above, there are more referrals on Monday than on other days of week. This might be because that usually some referrals on weekend are postponed to the following day, which is Monday, and this can also explain why Tuesday has second largest amount of referrals, and the rest of the week days(Wednesday, Thursday and Friday) have about the same amount, which is still significantly larger(around 40%) than weekend.
 
+We can also have a look at the summary of client type variable
 
+```{r}
+# check the results  
+client_type_count<-referrals_clean2%>%
+  count(client_type)
+referredby_count<-referrals_clean2%>%
+  count(referred_by)  
+client_type_count%>%arrange(desc(n))
+```
+and referred_by variable
+```{r}
+referredby_count%>%arrange(desc(n))
+```
+
+#### time related analysis
+```{r}
+ts_week<-referrals_clean3%>%
+  filter(!is.na(date_received))%>%
+  mutate(week = yearweek(date_received))%>%
+  group_by(week)%>%summarise(referrals = n())%>%
+  filter(week != yearweek("2016 Jun") & week != yearweek("2022 Apr"))%>%
+  as_tsibble(index = week)
+ts_week%>%fill_gaps()%>%
+  gg_subseries()
+
+```
+```{r}
+ts_week%>%fill_gaps()%>%
+  gg_season()
+```
+```{r}
+fit<-ts_month%>%fill_gaps()%>%model(etsmonth = ETS(referrals))
+report(fit)
+```
+
+```{r}
+ts_month<-referrals_clean3%>%
+mutate(date_received = if_else(is.na(date_received), date_entered, date_received))%>%
+  filter(!is.na(date_received))%>%
+  mutate(month = yearmonth(date_received))%>%
+  group_by(month)%>%summarise(referrals = n())%>%
+  filter(month != yearmonth("2016 Jun") & month != yearmonth("2022 Apr"))%>%
+  as_tsibble(index = month)
+ts_month%>%fill_gaps()%>%
+  gg_subseries()
+
+```
+This graph shows subseries of the referrals data by month. As is shown above the peaks in term of number of referrals are in March and October, and the troughs are in May and Sep. Most months show a downward trend from 2017 to 2022 but have troughs in 2020 or 2021, which may be a consequence of covid-19. But overally the seasonality is week as the ETC function suggests an MNN model.
+
+Maybe the drop in the 2nd quater is because the staff in the organization usually have a vocation due to the cold weather in 2nd quater
+
+```{r}
+ts_month%>%fill_gaps()%>%
+  gg_season()
+```
+
+```{r}
+glimpse(postcode2021)
+```
+```{r}
+map <-
+postcode2021 %>%
+  filter(postcode_num_2021>3000)
+  ggplot() +
+  geom_sf(aes(geometry = geometry))  # use the geometry variable
+
+map
+```
+
+referrals_clean2%>%group_by(date_received)%>%summarise(n())
+#3.do analysis according to the requirement
+#4.push to git in time.
+
+```{r}
+map <- sa32016 %>%
+  filter(gcc_name_2016 == "Greater Melbourne") %>%   # let's just look Melbourne
+  ggplot() +
+  geom_sf(aes(geometry = geometry)) +   # use the geometry variable
+  geom_point(aes(cent_long, cent_lat))  # use the centroid long (x) and lats (y)
+
+map
+```
+
+```{r}
+sa32016 %>%filter(gcc_name_2016 == "Greater Melbourne")
+```
 
 
