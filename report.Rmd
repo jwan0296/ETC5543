@@ -18,7 +18,7 @@ library(stringr)
 library(lubridate)
 library(fpp3)
 library(absmapsdata)
-#library(sf)
+# library(sf)
 ```
 
 ```{r}
@@ -122,6 +122,9 @@ referredby_count<-referrals_clean2%>%
   count(referred_by)  
 client_type_count%>%arrange(desc(n))
 ```
+From the tabel above we can see that the major source of client is from driver, witness and bereaved people.
+
+
 and referred_by variable
 ```{r}
 referredby_count%>%arrange(desc(n))
@@ -168,9 +171,22 @@ Maybe the drop in the 2nd quater is because the staff in the organization usuall
 ts_month%>%fill_gaps()%>%
   gg_season()
 ```
+From the graph above we can observe that the seasonality seems to be not very strong. But I also notice that the number of referrals usually drops in September, which may be due to the cold weather since staff are likely to go on a vocation to somewhere warm during this time.
 
 ```{r}
-glimpse(postcode2021)
+referrals_clean3%>%
+  filter(!is.na(date_received)&!is.na(date_entered))%>%
+  mutate(gap = date_entered-date_received)%>%
+  filter(gap>-1&gap<8)%>%
+  group_by(date_received)%>%
+  summarise(gap=mean(gap))%>%
+  as_tsibble(index = date_received)%>%
+  autoplot(gap)
+```
+
+
+```{r}
+glimpse(gapdata)
 ```
 ```{r}
 map <-
