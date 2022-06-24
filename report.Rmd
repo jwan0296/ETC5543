@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE)
 ```
 
 ```{r}
@@ -18,7 +18,7 @@ library(stringr)
 library(lubridate)
 library(fpp3)
 library(absmapsdata)
-# library(sf)
+library(sf)
 ```
 
 ```{r}
@@ -146,10 +146,7 @@ ts_week%>%fill_gaps()%>%
 ts_week%>%fill_gaps()%>%
   gg_season()
 ```
-```{r}
-fit<-ts_month%>%fill_gaps()%>%model(etsmonth = ETS(referrals))
-report(fit)
-```
+
 
 ```{r}
 ts_month<-referrals_clean3%>%
@@ -163,7 +160,12 @@ ts_month%>%fill_gaps()%>%
   gg_subseries()
 
 ```
-This graph shows subseries of the referrals data by month. As is shown above the peaks in term of number of referrals are in March and October, and the troughs are in May and Sep. Most months show a downward trend from 2017 to 2022 but have troughs in 2020 or 2021, which may be a consequence of covid-19. But overally the seasonality is week as the ETC function suggests an MNN model.
+
+```{r}
+fit<-ts_month%>%fill_gaps()%>%model(etsmonth = ETS(referrals))
+report(fit)
+```
+This graph shows subseries of the referrals data by month. As is shown above the peaks in term of number of referrals are in March and October, and the troughs are in May and Sep. Most months show a downward trend from 2017 to 2022 but have troughs in 2020 or 2021, which may be a consequence of covid-19. But overally the seasonality is week as the ETC function suggests an MNN model which does not contain seasonal component.
 
 Maybe the drop in the 2nd quater is because the staff in the organization usually have a vocation due to the cold weather in 2nd quater
 
@@ -185,15 +187,13 @@ referrals_clean3%>%
 ```
 
 
-```{r}
-glimpse(gapdata)
-```
+
 ```{r}
 map <-
 postcode2021 %>%
-  filter(postcode_num_2021>3000)
+  filter(postcode_num_2021>2999&postcode_num_2021<4000)%>%
   ggplot() +
-  geom_sf(aes(geometry = geometry))  # use the geometry variable
+  geom_sf(aes(geometry = geometry),)  # use the geometry variable
 
 map
 ```
