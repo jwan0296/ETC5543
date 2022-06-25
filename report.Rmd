@@ -215,5 +215,16 @@ map
 ```{r}
 sa32016 %>%filter(gcc_name_2016 == "Greater Melbourne")
 ```
+```{r}
+ts_month_week<-referrals_clean3%>%
+mutate(date_received = if_else(is.na(date_received), date_entered, date_received))%>%
+  filter(!is.na(date_received))%>%
+  mutate(month = yearmonth(date_received))%>%
+  filter(month != yearmonth("2016 Jun") & month != yearmonth("2022 Apr"))%>%group_by(month, day_of_week)%>%
+  summarise(referrals = n())
+ts_month_week%>%
+  ggplot(aes(x = month, y = referrals, color = day_of_week)) +
+  geom_line()
+```
 
 
