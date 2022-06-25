@@ -160,14 +160,14 @@ ts_month%>%fill_gaps()%>%
   gg_subseries()
 
 ```
-
+From the plot above we can see that almost for every month there is a significant drop in year 2020, which can be the consequence of Australia's lock-down policy for COVID-19.
 ```{r}
 fit<-ts_month%>%fill_gaps()%>%model(etsmonth = ETS(referrals))
 report(fit)
 ```
-This graph shows subseries of the referrals data by month. As is shown above the peaks in term of number of referrals are in March and October, and the troughs are in May and Sep. Most months show a downward trend from 2017 to 2022 but have troughs in 2020 or 2021, which may be a consequence of covid-19. But overally the seasonality is week as the ETC function suggests an MNN model which does not contain seasonal component.
+This graph shows subseries of the referrals data by month. As is shown above the peaks in term of number of referrals are in March and October, and the troughs are in May and Sep. Most months show a downward trend from 2017 to 2022 but have troughs in 2020 or 2021, which may be a consequence of covid-19. But overall the seasonality is week as the ETC function suggests an MNN model which does not contain seasonal component.
 
-Maybe the drop in the 2nd quater is because the staff in the organization usually have a vocation due to the cold weather in 2nd quater
+Maybe the drop in the 2nd quarter is because the staff in the organization usually have a vocation due to the cold weather in 2nd quarter
 
 ```{r}
 ts_month%>%fill_gaps()%>%
@@ -179,14 +179,14 @@ From the graph above we can observe that the seasonality seems to be not very st
 referrals_clean3%>%
   filter(!is.na(date_received)&!is.na(date_entered))%>%
   mutate(gap = date_entered-date_received)%>%
-  filter(gap>-1&gap<8)%>%
+  filter(gap>-1&gap<8&date_received>"2020-03-01")%>%
   group_by(date_received)%>%
   summarise(gap=mean(gap))%>%
   as_tsibble(index = date_received)%>%
   autoplot(gap)
 ```
 
-
+Although not very apparent, we can still observe the downward pattern followed by a upwards pattern in this gap plot, conbining with the drop of refferals after the outbreak of covid-19, we can infer that the number of referrals does to some degree influenced the speed of processing referrals, and this indicates that the workload might be close to the upper limit of RTSSV.
 
 ```{r}
 map <-
