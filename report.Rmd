@@ -19,6 +19,7 @@ library(lubridate)
 library(fpp3)
 library(absmapsdata)
 library(sf)
+library(leaflet)
 ```
 
 ```{r}
