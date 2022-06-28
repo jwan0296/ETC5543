@@ -25,6 +25,7 @@ library(leaflet)
 ```{r}
 # Read files as tibbles
 referrals <- read_csv(file="referrals.csv")
+postcode_population <- read_csv("postcode_population.csv")
 ```
 
 
@@ -227,5 +228,26 @@ ts_month_week%>%
   ggplot(aes(x = month, y = referrals, color = day_of_week)) +
   geom_line()
 ```
+```{r}
+postcode_population<-postcode_population%>%mutate(postcode=as.character(postcode))
+```
 
+```{r}
+mapdata<-postcode2021%>%
+  rename(post_code=postcode_2021)%>%
+  left_join(referrals_clean3, by=c("post_code"="post_code"))%>%
+  group_by(post_code)%>%
+  summarise(referrals=n())%>%
+  left_join(postcode_population, by = c("post_code"="postcode"))%>%
+  select(postcode=post_code, geometry, referrals, population)
+  
+```
+
+
+```{r}
+leaflet(mapdata)%>%
+  addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite")%>%
+  addMarkers()
+    
+```
 
