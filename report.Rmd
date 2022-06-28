@@ -20,6 +20,7 @@ library(fpp3)
 library(absmapsdata)
 library(sf)
 library(leaflet)
+library(RColorBrewer)
 ```
 
 ```{r}
@@ -231,23 +232,33 @@ ts_month_week%>%
 ```{r}
 postcode_population<-postcode_population%>%mutate(postcode=as.character(postcode))
 ```
-
 ```{r}
-mapdata<-postcode2021%>%
-  rename(post_code=postcode_2021)%>%
-  left_join(referrals_clean3, by=c("post_code"="post_code"))%>%
+mapdata<-referrals_clean3%>%
   group_by(post_code)%>%
   summarise(referrals=n())%>%
-  left_join(postcode_population, by = c("post_code"="postcode"))%>%
-  select(postcode=post_code, geometry, referrals, population)
+  left_join(postcode2021, by=c("post_code"="postcode_2021"))%>%
+  left_join(postcode_population, by=c("post_code"="postcode"))%>%
+  select(cent_lat, cent_long, population, referrals, post_code,geometry)%>%
+  filter(!is.na(population)&!is.na(cent_lat))
   
 ```
 
 
+
 ```{r}
-leaflet(mapdata)%>%
+mapdata1<-mapdata%>%
+  filter(!is.na(population))%>%
+  summarise(postcode=post_code,prop_refer=referrals/sum(referrals)-population/sum(population), lat = cent_lat, lng = cent_long, geometry=geometry)
+```
+
+```{r}
+pal<-colorBin(palette = "Reds", domain=mapdata1$prop_refer,n=5)
+```
+
+```{r}
+leaflet(mapdata1)%>%
   addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite")%>%
-  addMarkers()
+  addPolygons(lat=~lat,lng=~lng, label = ~postcode, color = "gray", fillColor = ~pal(prop_refer))
     
 ```
 
