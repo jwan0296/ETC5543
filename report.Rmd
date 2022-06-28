@@ -248,7 +248,17 @@ mapdata<-referrals_clean3%>%
 ```{r}
 mapdata1<-mapdata%>%
   filter(!is.na(population))%>%
-  summarise(postcode=post_code,prop_refer=referrals/sum(referrals)-population/sum(population), lat = cent_lat, lng = cent_long, geometry=geometry)
+  summarise(postcode=post_code,prop_refer=referrals/sum(referrals)-population/sum(population), lat = cent_lat, lng = cent_long, geometry=geometry)%>%mutate(prop_refer=10000*prop_refer)
+```
+```{r}
+map <-
+mapdata1 %>%
+  ggplot() +
+  geom_sf(aes(geometry = geometry, fill=prop_refer),lwd=0, show.legend = TRUE)+  # use the geometry variable
+theme_void() +                    # clears other plot elements
+  coord_sf()
+
+map
 ```
 
 ```{r}
@@ -257,8 +267,8 @@ pal<-colorBin(palette = "Reds", domain=mapdata1$prop_refer,n=5)
 
 ```{r}
 leaflet(mapdata1)%>%
-  addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite")%>%
-  addPolygons(lat=~lat,lng=~lng, label = ~postcode, color = "gray", fillColor = ~pal(prop_refer))
+  addTiles()%>%
+  addPolygons(lat=~lat,lng=~lng, label = ~postcode, color = "gray", fillColor = ~pal(mapdata1$prop_refer*10^4),fillOpacity = 0.8, weight = 1.0,opacity = 1.0)
     
 ```
 
