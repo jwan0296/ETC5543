@@ -5,6 +5,23 @@ date: "26/05/2022"
 output: html_document
 ---
 
+# Amber Community Data Analysis Program
+
+### Abstract
+
+This program is offered by Leanne Hyndman, the leader of Amber Community, and aims to find useful information through the available data provided by them or other contributors on the internet, and provide data-driven support.
+
+To achieve this aim, I cleaned the data, did some exploration analysis, made the time series analysis and also compared
+
+The data is from three source: Amber Community, adsmapsdata, and the government's website (https://www.coronavirus.vic.gov.au/victorian-coronavirus-covid-19-data)
+
+
+
+### Background and Motivation
+
+Amber Community, formerly Road Trauma Support Services Victoria, is a not-for-profit organization contributing to the safety and wellbeing of road users. To provide data-driven support
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE)
 ```
@@ -248,13 +265,14 @@ mapdata<-referrals_clean3%>%
 ```{r}
 mapdata1<-mapdata%>%
   filter(!is.na(population))%>%
-  summarise(postcode=post_code,prop_refer=referrals/sum(referrals)-population/sum(population), lat = cent_lat, lng = cent_long, geometry=geometry)%>%mutate(prop_refer=10000*prop_refer)
+  summarise(postcode=post_code,attractiveness=referrals/sum(referrals)-population/sum(population), lat = cent_lat, lng = cent_long, geometry=geometry)%>%mutate(attractiveness=1000*attractiveness)
 ```
 ```{r}
 map <-
 mapdata1 %>%
   ggplot() +
-  geom_sf(aes(geometry = geometry, fill=prop_refer),lwd=0, show.legend = TRUE)+  # use the geometry variable
+  geom_sf(aes(geometry = geometry, fill=attractiveness),lwd=0, show.legend = TRUE)+  # use the geometry variable
+  geom_point(aes(145.2,-37.8),color = "red",size=0.6)+
 theme_void() +                    # clears other plot elements
   coord_sf()
 
@@ -262,13 +280,13 @@ map
 ```
 
 ```{r}
-pal<-colorBin(palette = "Reds", domain=mapdata1$prop_refer,n=5)
+pal<-colorBin(palette = "Reds", domain=mapdata1$attractiveness,n=5)
 ```
 
 ```{r}
 leaflet(mapdata1)%>%
   addTiles()%>%
-  addPolygons(lat=~lat,lng=~lng, label = ~postcode, color = "gray", fillColor = ~pal(mapdata1$prop_refer*10^4),fillOpacity = 0.8, weight = 1.0,opacity = 1.0)
+  addPolygons(lat=~lat,lng=~lng, label = ~postcode, color = "gray", fillColor = ~pal(mapdata1$attractiveness*10^4),fillOpacity = 1.0, weight = 1.0,opacity = 1.0)
     
 ```
 
