@@ -276,15 +276,15 @@ mapdata<-postcode2021%>%
 ```{r}
 mapdata[is.na(mapdata)] <- 0
 mapdata1<-mapdata%>%
-  summarise(postcode=postcode_2021,attractiveness=referrals/sum(referrals)-population/sum(population), lat = cent_lat, lng = cent_long, geometry=geometry)%>%mutate(attractiveness=1000*attractiveness, postcode=as.numeric(postcode))%>%filter(postcode>2999&postcode<4000)
+  summarise(postcode=postcode_2021,attractiveness=referrals/sum(referrals)-population/sum(population), lat = cent_lat, lng = cent_long, geometry=geometry,population=population, referral=referral)%>%mutate(attractiveness=1000*attractiveness, postcode=as.numeric(postcode))%>%filter(postcode>2999&postcode<4000)
 ```
 ```{r}
 map <-
 mapdata1 %>%
   ggplot() +
-  geom_sf(aes(geometry = geometry, fill=attractiveness, text=paste("postcode:",postcode)),lwd=0, show.legend = TRUE)+  # use the geometry variable
+  geom_sf(aes(geometry = geometry, fill=attractiveness, text=paste("postcode:",postcode, "\n", "population:", population, "\n", "referral:",referral)),lwd=0, show.legend = TRUE)+  # use the geometry variable
   geom_point(aes(145.2,-37.8),color = "red",size=0.6)+
-  scale_fill_viridis_c(direction = -1) +
+  scale_fill_viridis_c() +
 
   coord_sf()
 
