@@ -219,33 +219,9 @@ referrals_clean3%>%
 
 Although not very apparent, we can still observe the downward pattern followed by a upwards pattern in this gap plot, conbining with the drop of refferals after the outbreak of covid-19, we can infer that the number of referrals does to some degree influenced the speed of processing referrals, and this indicates that the workload might be close to the upper limit of RTSSV.
 
-```{r}
-map <-
-postcode2021 %>%
-  filter(postcode_num_2021>2999&postcode_num_2021<4000)%>%
-  ggplot() +
-  geom_sf(aes(geometry = geometry),)  # use the geometry variable
 
-map
-```
 
-referrals_clean2%>%group_by(date_received)%>%summarise(n())
-#3.do analysis according to the requirement
-#4.push to git in time.
 
-```{r}
-map <- sa32016 %>%
-  filter(gcc_name_2016 == "Greater Melbourne") %>%   # let's just look Melbourne
-  ggplot() +
-  geom_sf(aes(geometry = geometry)) +   # use the geometry variable
-  geom_point(aes(cent_long, cent_lat))  # use the centroid long (x) and lats (y)
-
-map
-```
-
-```{r}
-sa32016 %>%filter(gcc_name_2016 == "Greater Melbourne")
-```
 ```{r}
 ts_month_week<-referrals_clean3%>%
 mutate(date_received = if_else(is.na(date_received), date_entered, date_received))%>%
