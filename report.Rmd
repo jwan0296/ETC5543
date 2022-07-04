@@ -38,6 +38,9 @@ library(absmapsdata)
 library(sf)
 library(leaflet)
 library(RColorBrewer)
+library(plotly)
+library(ggiraph)
+
 ```
 
 ```{r}
@@ -151,6 +154,8 @@ referredby_count%>%arrange(desc(n))
 ```
 
 #### time related analysis
+
+
 ```{r}
 ts_week<-referrals_clean3%>%
   filter(!is.na(date_received))%>%
@@ -159,12 +164,17 @@ ts_week<-referrals_clean3%>%
   filter(week != yearweek("2016 Jun") & week != yearweek("2022 Apr"))%>%
   as_tsibble(index = week)
 ts_week%>%fill_gaps()%>%
-  gg_subseries()
+  autoplot()+
+  geom_smooth(span = 0.4)
 
 ```
+
+
+
 ```{r}
 ts_week%>%fill_gaps()%>%
-  gg_season()
+  gg_season()+
+  geom_smooth()
 ```
 
 
@@ -203,7 +213,8 @@ referrals_clean3%>%
   group_by(date_received)%>%
   summarise(gap=mean(gap))%>%
   as_tsibble(index = date_received)%>%
-  autoplot(gap)
+  autoplot(gap)+
+  geom_smooth(span=.4)
 ```
 
 Although not very apparent, we can still observe the downward pattern followed by a upwards pattern in this gap plot, conbining with the drop of refferals after the outbreak of covid-19, we can infer that the number of referrals does to some degree influenced the speed of processing referrals, and this indicates that the workload might be close to the upper limit of RTSSV.
@@ -250,33 +261,34 @@ ts_month_week%>%
 postcode_population<-postcode_population%>%mutate(postcode=as.character(postcode))
 ```
 ```{r}
-mapdata<-referrals_clean3%>%
+referrals_clean4<-referrals_clean3%>%
   group_by(post_code)%>%
-  summarise(referrals=n())%>%
-  left_join(postcode2021, by=c("post_code"="postcode_2021"))%>%
-  left_join(postcode_population, by=c("post_code"="postcode"))%>%
-  select(cent_lat, cent_long, population, referrals, post_code,geometry)%>%
-  filter(!is.na(population)&!is.na(cent_lat))
+  summarise(referrals=n())
+mapdata<-postcode2021%>%
+  left_join(referrals_clean4, by=c("postcode_2021"="post_code"))%>%
+  left_join(postcode_population, by=c("postcode_2021"="postcode"))%>%
+  select(cent_lat, cent_long, population, referrals, postcode_2021,geometry)
   
 ```
 
 
 
 ```{r}
+mapdata[is.na(mapdata)] <- 0
 mapdata1<-mapdata%>%
-  filter(!is.na(population))%>%
-  summarise(postcode=post_code,attractiveness=referrals/sum(referrals)-population/sum(population), lat = cent_lat, lng = cent_long, geometry=geometry)%>%mutate(attractiveness=1000*attractiveness)
+  summarise(postcode=postcode_2021,attractiveness=referrals/sum(referrals)-population/sum(population), lat = cent_lat, lng = cent_long, geometry=geometry)%>%mutate(attractiveness=1000*attractiveness, postcode=as.numeric(postcode))%>%filter(postcode>2999&postcode<4000)
 ```
 ```{r}
 map <-
 mapdata1 %>%
   ggplot() +
-  geom_sf(aes(geometry = geometry, fill=attractiveness),lwd=0, show.legend = TRUE)+  # use the geometry variable
+  geom_sf(aes(geometry = geometry, fill=attractiveness, text=paste("postcode:",postcode)),lwd=0, show.legend = TRUE)+  # use the geometry variable
   geom_point(aes(145.2,-37.8),color = "red",size=0.6)+
-theme_void() +                    # clears other plot elements
+  scale_fill_viridis_c(direction = -1) +
+
   coord_sf()
 
-map
+ggplotly(map)
 ```
 
 ```{r}
@@ -290,3 +302,35 @@ leaflet(mapdata1)%>%
     
 ```
 
+```{r}
+ts_month<-referrals_clean3%>%
+mutate(date_received = if_else(is.na(date_received), date_entered, date_received))%>%
+  filter(!is.na(date_received))%>%
+  mutate(month = yearmonth(date_received))%>%
+  group_by(month,client_type)%>%summarise(referrals = n())%>%
+  filter(month != yearmonth("2016 Jun") & month != yearmonth("2022 Apr"))
+
+```
+
+```{r}
+p<-ts_month%>%
+  ggplot( aes(month, referrals,fill=client_type), position="fill") +
+  geom_col()
+
+ggplotly(p)
+```
+```{r}
+ts_month<-referrals_clean3%>%
+mutate(date_received = if_else(is.na(date_received), date_entered, date_received))%>%
+  filter(!is.na(date_received))%>%
+  mutate(month = yearmonth(date_received))%>%
+  group_by(month,referred_by)%>%summarise(referrals = n())%>%
+  filter(month != yearmonth("2016 Jun") & month != yearmonth("2022 Apr"))
+
+```
+```{r}
+ts_month%>%
+  plot_ly(x=~month, y=~referrals,type='bar' ,fill = ~referred_by)
+
+```
+As is shown above, the referrals from vsa disappeare
