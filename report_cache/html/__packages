@@ -19,3 +19,6 @@ absmapsdata
 sf
 leaflet
 RColorBrewer
+plotly
+ggiraph
+knitr
