@@ -9,20 +9,24 @@ output:
 
 # Abstract
 
-This program is offered by Leanne Hyndman, the leader of Amber Community, and aims to find useful information through the available data provided by the team or other contributors on the internet and provide data-driven support.
+This program is offered by Leanne Hyndman, a counsellor with Amber Community, and aims to find useful information  to Amber Community by analysing key counselling intake data alongside publically available data in order to provide a clearer understanding of the work of Amber Community.
 
 To achieve this aim, I cleaned the data from Amber Community, joined it with other data, did some exploration analysis, made the time series analysis, and compared the population and referrals spatial distribution.
 
-The data contains the following variables: 
+The data contains the following variables for each of the referrals received: 
 
-* Date received, the date Amber Community received the referrals
-* Date entered, the date the client entered
-* Client Type,
-* Referred by, the type of the person or institution that made the referral
-* Postcode,
-* DHA Region, which looks a bit messy and the format is not unified
+* Date received: the date Amber Community received the referrals
+* Date entered: the date the client entered
+* Client Type eg driver pedestrian etc.
+* Referred by: the type of the person or institution that made the referral
+* Postcode: the postcode the referred person lives in
+* DHS Region, the Department of Health and Human Services Region where the client lives, (This variable seems a bit messy and the format is not unified so it might not be usable.)
 
-The findings are: the number of referrals during the time shows a weak seasonality weekly and monthly, which may be due to the regular schedule of staff; the institution seems to have different levels of “attractiveness” to different regions: the people who live in regional areas seem to be more likely to come to the institution; as expected, the lockdown policies in cope with COVID-19 do have a significant influence on Amber Community.
+The key findings are: 
+
+1. the number of referrals during the time shows a weak seasonality weekly and monthly, which may be due to the regular schedule of staff; 
+2. the institution seems to have different levels of “attractiveness” to different regions: the people who live in regional areas seem to be more likely to come to the institution;
+3.  Statewide and metropolitan Covid-19 Lockdown Policies do have a significant influence on Amber Community.
 
 The data is from three sources: Amber Community for the essential dataset "referrals.csv", the r package called “adsmapsdata” for the map data, and the government's website for demographics(address: [https://www.coronavirus.vic.gov.au/victorian-coronavirus-covid-19-data](https://www.coronavirus.vic.gov.au/victorian-coronavirus-covid-19-data)).
 
@@ -32,23 +36,23 @@ The data is from three sources: Amber Community for the essential dataset "refer
 
 Amber Community, formerly Road Trauma Support Services Victoria, is a not-for-profit organization contributing to the safety and well-being of road users. To provide data-driven support. 
 
-They provide counselling and support to people affected by road trauma and address the attitudes and behaviours of road users through education. Also, They deliver a range of education programs addressing the behaviours and attitudes of drivers to reduce the incidence of crashes, injuries and fatalities, and the associated trauma and grief.
+They provide counselling and support to people affected by road trauma and address the attitudes and behaviours of road users through education. They deliver a range of education programs addressing the behaviours and attitudes of drivers to reduce the incidence of crashes, injuries and fatalities, and the associated trauma and grief.
 
 Now, they are interested in a few questions and wish that we can provide some data-driven support to them so that they can have more insight into their meaningful work and contribute more to road users’ mental and physical health.
 
 # Objectives and Significance
 
 * Summarise the data and note any changes over the period:
-+ referred by
-+ number of days between date received and date entered
-+ client type
-+ number of referrals per day/week/month
+* Understand any patterns or trends in the referring organisations
+* Identify the number of days between date received and date entered
+* Understand how client type is represented in referrals
+* Understand patterns in the number of referrals per day/week/month
 
-* Hopefully, see any seasonality
+* Understand any seasonality
 
-* Figure out how do the location demographics compare to the population of VIC?
+* Compare location demographics with the population of Victoria
 
-A tricky question here is to compare the demographics, which I considered using a formula like this:
+* A tricky question here is to compare the demographics, which I considered using a formula like this:
 
  $$\frac{a_1}{a_2}-\frac{b_1}{b_2}$$
 
@@ -241,7 +245,7 @@ ts_week%>%fill_gaps()%>%
   geom_smooth(span = 0.4)
 
 ```
-We can see from figure \@ref(fig:weekly-nreferrals) a cyclic behaviour from the start till 2020, and a significant drop in 2020 which might be the effect of both cyclic behaviour and the lockdown policy. Then the number of referrals go back slowly to the cyclic pattern. This shows the significant influence of the lockdown policy since 
+We can see from figure \@ref(fig:weekly-nreferrals) a cyclic behaviour from the start till 2020, and a significant drop in 2020 which might be the effect of both cyclic behaviour and the lockdown policy. Then the number of referrals go back slowly to the cyclic pattern showing the significant influence of the lockdown policy. 
 
 
 ```{r weekly-season}
@@ -288,32 +292,32 @@ report(fit)
 
 
 I also made two interactive plots to show the changes in client types and sources of referrals over the period:
-```{r referredby-fig}
+```{r referredby-fig, fig.cap="the number of referrals by referred_by"}
 ts_month_1<-referrals_clean3%>%
 mutate(date_received = if_else(is.na(date_received), date_entered, date_received))%>%
   filter(!is.na(date_received))%>%
   mutate(month = yearmonth(date_received))%>%
-  group_by(month,referred_by)%>%summarise(referrals = n())%>%
+  group_by(month,referred_by)%>%summarise(n_referrals = n())%>%
   filter(month != yearmonth("2016 Jun") & month != yearmonth("2022 Apr"))
 p1<-ts_month_1%>%
-  ggplot( aes(month, referrals,fill=referred_by), position="fill") +
+  ggplot( aes(month, n_referrals,fill=referred_by), position="fill") +
   geom_col()
 
 ggplotly(p1)
 ```
 
-As is shown above, the major source of referrals has been vper over the period and the referrals from vsa disappeared since 2019 Sep.
+As is shown above, the major source of referrals has been vper over the period and the referrals from vsa disappeared since 2019 Sep. This may be due to a classification error of workers entering data.
 
 
-```{r clienttype-fig}
+```{r clienttype-fig, fig.cap="the number of referrals by client type"}
 ts_month_2<-referrals_clean3%>%
 mutate(date_received = if_else(is.na(date_received), date_entered, date_received))%>%
   filter(!is.na(date_received))%>%
   mutate(month = yearmonth(date_received))%>%
-  group_by(month,client_type)%>%summarise(referrals = n())%>%
+  group_by(month,client_type)%>%summarise(n_referrals = n())%>%
   filter(month != yearmonth("2016 Jun") & month != yearmonth("2022 Apr"))
 p2<-ts_month_2%>%
-  ggplot( aes(month, referrals,fill=client_type), position="fill") +
+  ggplot( aes(month, n_referrals,fill=client_type), position="fill") +
   geom_col()
 
 ggplotly(p2)
@@ -394,7 +398,7 @@ mapdata1 %>%
 ggplotly(map)
 ```
 
-Notes that the data does have its limitation: there is not enough data to compute the accurate value of true "attractiveness", so in this interactive map \@ref(fig:attract-map), I also included the number of referrals and the population in a certain area for reference.
+Note: the data does have its limitation: there is not enough data to compute the accurate value of true "attractiveness", so in this interactive map \@ref(fig:attract-map), I also included the number of referrals and the population in a certain area for reference.
 
 
 
@@ -407,23 +411,38 @@ I used R version 4.2.1 (R Core Team 2022) and the following R packages: absmapsd
 
 
 Allaire, JJ, Yihui Xie, Jonathan McPherson, Javier Luraschi, Kevin Ushey, Aron Atkins, Hadley Wickham, Joe Cheng, Winston Chang, and Richard Iannone. 2022. Rmarkdown: Dynamic Documents for r. https://github.com/rstudio/rmarkdown.
-Cheng, Joe, Bhaskar Karambelkar, and Yihui Xie. 2022. Leaflet: Create Interactive Web Maps with the JavaScript ’Leaflet’ Library. https://CRAN.R-project.org/package=leaflet.
+
 Firke, Sam. 2021. Janitor: Simple Tools for Examining and Cleaning Dirty Data. https://CRAN.R-project.org/package=janitor.
-Gohel, David, and Panagiotis Skintzos. 2022. Ggiraph: Make ’Ggplot2’ Graphics Interactive. https://CRAN.R-project.org/package=ggiraph.
+
 Hyndman, Rob. 2021. Fpp3: Data for "Forecasting: Principles and Practice" (3rd Edition). https://CRAN.R-project.org/package=fpp3.
+
 Kassambara, Alboukadel. 2020. Ggpubr: ’Ggplot2’ Based Publication Ready Plots. https://CRAN.R-project.org/package=ggpubr.
+
 Mackey, Will. 2022. Absmapsdata: A Catalogue of Ready-to-Use ASGS (and Other) Sf Objects.
 Neuwirth, Erich. 2022. RColorBrewer: ColorBrewer Palettes. https://CRAN.R-project.org/package=RColorBrewer.
+
 Pebesma, Edzer. 2018. “Simple Features for R: Standardized Support for Spatial Vector Data.” The R Journal 10 (1): 439–46. https://doi.org/10.32614/RJ-2018-009.
+
 R Core Team. 2022. R: A Language and Environment for Statistical Computing. Vienna, Austria: R Foundation for Statistical Computing. https://www.R-project.org/.
+
 Rodríguez-Sánchez, Francisco, Connor P. Jackson, and Shaurita D. Hutchins. 2022. Grateful: Facilitate Citation of r Packages. https://github.com/Pakillo/grateful.
+
 Sievert, Carson. 2020. Interactive Web-Based Data Visualization with r, Plotly, and Shiny. Chapman; Hall/CRC. https://plotly-r.com.
+
 Vaidyanathan, Ramnath, Yihui Xie, JJ Allaire, Joe Cheng, Carson Sievert, and Kenton Russell. 2021. Htmlwidgets: HTML Widgets for r. https://CRAN.R-project.org/package=htmlwidgets.
+
 Wickham, Hadley, Mara Averick, Jennifer Bryan, Winston Chang, Lucy D’Agostino McGowan, Romain François, Garrett Grolemund, et al. 2019. “Welcome to the tidyverse.” Journal of Open Source Software 4 (43): 1686. https://doi.org/10.21105/joss.01686.
+
 Xie, Yihui. 2014. “Knitr: A Comprehensive Tool for Reproducible Research in R.” In Implementing Reproducible Computational Research, edited by Victoria Stodden, Friedrich Leisch, and Roger D. Peng. Chapman; Hall/CRC. http://www.crcpress.com/product/isbn/9781466561595.
+
 ———. 2015. Dynamic Documents with R and Knitr. 2nd ed. Boca Raton, Florida: Chapman; Hall/CRC. https://yihui.org/knitr/.
+
 ———. 2016. Bookdown: Authoring Books and Technical Documents with R Markdown. Boca Raton, Florida: Chapman; Hall/CRC. https://bookdown.org/yihui/bookdown.
+
 ———. 2022a. Bookdown: Authoring Books and Technical Documents with r Markdown. https://github.com/rstudio/bookdown.
+
 ———. 2022b. Knitr: A General-Purpose Package for Dynamic Report Generation in r. https://yihui.org/knitr/.
+
 Xie, Yihui, J. J. Allaire, and Garrett Grolemund. 2018. R Markdown: The Definitive Guide. Boca Raton, Florida: Chapman; Hall/CRC. https://bookdown.org/yihui/rmarkdown.
+
 Xie, Yihui, Christophe Dervieux, and Emily Riederer. 2020. R Markdown Cookbook. Boca Raton, Florida: Chapman; Hall/CRC. https://bookdown.org/yihui/rmarkdown-cookbook.
